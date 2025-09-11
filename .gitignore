@@ -1,0 +1,10 @@
+# Build artifacts
+*.o
+*.elf
+*.bin
+*.hex
+*.map
+
+# IDE files
+.vscode/
+.DS_Store
