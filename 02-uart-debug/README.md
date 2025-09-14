@@ -12,7 +12,7 @@ Project 2: UART Debug Output
 make clean
 make flash
 
-# Open serial monitor (Mac)
+## Open serial monitor (Mac)
 screen /dev/cu.usbmodem* 9600
 
 #
