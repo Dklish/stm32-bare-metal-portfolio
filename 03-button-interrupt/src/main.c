@@ -7,6 +7,7 @@ will turn off the LED until the button is pushed again and were back to state 0
 -This will show me how to use the interrupt register 
 Author:Diego Klish 
 */
+
 #include <stdint.h>//just our main library 
 
 //first we'll define our clock control registers 
@@ -37,8 +38,17 @@ Author:Diego Klish
 #define USART2_BRR      (*(volatile uint32_t*)0x40004408)//Baud rate
 #define USART2_CR1      (*(volatile uint32_t*)0x4000440C)//Control 
 
+
 //Define our state that can be changed whenever given a button press
 volatile int led_pattern = 0; //0 = 1HZ, 1 = 5HZ, 2 = off 
+
+//quick function to send our UART string message to console 
+void uart_send_string(const char* str) {
+    while(*str) {
+        while(!(USART2_SR & (1 << 7)));
+        USART2_DR = *str++;
+    }
+}   
 
 void setup(){
     //first we need to enable all our clocks 
@@ -52,7 +62,7 @@ void setup(){
 
     //configure PA2, PA3 for UART
     GPIOA_MODER &= ~(0xF << 4);//clears mode bits 
-    GPIOA_MODER |= (0xA << 4);//sets to alternate function 0101(A)
+    GPIOA_MODER |= (0xA << 4);//sets to alternate function 1010(A)
     GPIOA_AFRL &= ~(0xFF << 8);//Clears the alternate function
     GPIOA_AFRL |= (0x77 << 8);//Sets alternate function  7
 
@@ -64,29 +74,25 @@ void setup(){
     GPIOC_MODER &= ~(3 << 26);//sets PC13 as a input 
 
     //Configure NVIC Register 
-    SYSCFG_EXTICR4 &= ~(0xF << 4);//enable input 
-    SYSCFG_EXTICR4 |= (0x2 << 4);//falling edge trigger 
+    SYSCFG_EXTICR4 &= ~(0xF << 4); 
+    SYSCFG_EXTICR4 |= (0x2 << 4);
+
+    // Configure EXTI13 
+    EXTI_IMR |= (1 << 13);     // Enable interrupt mask
+    EXTI_FTSR |= (1 << 13);    // Set falling edge trigger
 
     //Enable EXTI15_10 in NVIC
     NVIC_ISER1 |= (1 << 8);
-    //uart_send_string("Everything is enabled button is primed"); //Let's user know program is ready 
+    uart_send_string("Everything is enabled button is primed"); //Let's user know program is ready 
 }
 
-/*quick function to send our UART string message to console 
-void uart_send_string(const char* str) {
-    while(*str) {
-        while(!(USART2_SR & (1 << 7)));
-        USART2_DR = *str++;
-    }
-}    
-*/
 
 //delay function 
 void delay_ms(volatile uint32_t ms) {
     for(volatile uint32_t i = 0; i < ms * 16000; i++);
 }
 
-/*
+
 void EXTI15_10_IRQHandler(void) {
     if(EXTI_PR & (1 << 13)) {
         EXTI_PR |= (1 << 13);  // Clear pending bit
@@ -100,23 +106,23 @@ void EXTI15_10_IRQHandler(void) {
         }
     }
 }
-*/
+
 
 int main(){
     setup();
     while(1) {    //infinite loop 
         switch(led_pattern) {
-            case 0:  // Slow blink (1Hz)
+            case 0:  //Slow blink (1Hz)
                 GPIOA_ODR ^= (1 << 5);
                 delay_ms(500);
                 break;
                 
-            case 1:  // Fast blink (5Hz)
+            case 1:  //Fast blink (5Hz)
                 GPIOA_ODR ^= (1 << 5);
                 delay_ms(100);
                 break;
                 
-            case 2:  // Off
+            case 2:  //Off
                 GPIOA_ODR &= ~(1 << 5);
                 delay_ms(200);
                 break;
@@ -125,3 +131,5 @@ int main(){
     return 0;
 
 }
+
+
