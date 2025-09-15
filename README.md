@@ -1,4 +1,4 @@
 # STM32 Bare Metal Programming Portfolio
 
-Professional embedded systems development using direct register manipulation. Starting from my very first project<br>
+Embedded systems development using direct register manipulation and basic peripheral control <br>
 **Author:** Diego Klish
